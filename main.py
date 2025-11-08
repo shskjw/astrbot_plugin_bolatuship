@@ -230,20 +230,25 @@ class PlatoSoraPlugin(Star):
         return clean_prompt, params
     
     # --- 自动识别图片比例的函数 ---
-    def _get_aspect_ratio_from_image(self, image_bytes: bytes) -> Optional[str]:
+    async def _get_aspect_ratio_from_image(self, image_bytes: bytes) -> Optional[str]:
         if not Image:
             return None
-        try:
-            with Image.open(io.BytesIO(image_bytes)) as img:
-                width, height = img.size
-                if width == 0 or height == 0: return None
-                ratio = width / height
-                if ratio > 1.1: return "16:9"
-                elif ratio < 0.9: return "9:16"
-                else: return "1:1"
-        except Exception as e:
-            logger.warning(f"[PlatoSora] 使用 Pillow 自动识别图片比例失败: {e}")
-            return None
+
+        def process_image():
+            try:
+                with Image.open(io.BytesIO(image_bytes)) as img:
+                    width, height = img.size
+                    if width == 0 or height == 0: return None
+                    ratio = width / height
+                    if ratio > 1.1: return "16:9"
+                    elif ratio < 0.9: return "9:16"
+                    else: return "1:1"
+            except Exception as e:
+                logger.warning(f"[PlatoSora] 使用 Pillow 自动识别图片比例失败: {e}")
+                return None
+
+        # 使用 asyncio.to_thread 在工作线程中运行同步代码
+        return await asyncio.to_thread(process_image)
 
     # --- 核心生成与发送逻辑 ---
     async def _generate_video_task(self, event: AstrMessageEvent, prompt: str):
@@ -254,7 +259,7 @@ class PlatoSoraPlugin(Star):
         clean_prompt, params = self._parse_prompt_for_params(prompt)
 
         if image_bytes and 'aspect_ratio' not in params:
-            auto_ratio = self._get_aspect_ratio_from_image(image_bytes)
+            auto_ratio = await self._get_aspect_ratio_from_image(image_bytes)
             if auto_ratio:
                 params['aspect_ratio'] = auto_ratio
                 logger.info(f"[PlatoSora] 自动识别图片比例为: {auto_ratio}")
