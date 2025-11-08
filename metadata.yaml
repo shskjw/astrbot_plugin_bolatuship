@@ -1,5 +1,5 @@
 name: astrbot_plugin_bolatuship
-desc: 使用柏拉图API接口和Sora 2模型生成视频。
+desc: 使用柏拉图API接口和Sora 2等模型生成视频。
 help:  # 插件的帮助信息
 version: v1.0.0 # 插件版本号。格式：v1.1.1 或者 v1.1
 author: shskjw
