@@ -1,5 +1,3 @@
-# --- main.py (v1.0.6 - 移除自动模型切换) ---
-
 import asyncio
 import base64
 import json
