@@ -1,27 +1,179 @@
 {
-    "api_url": { "description": "柏拉图 API 的 URL", "type": "string", "default": "https://api.bltcy.ai" },
-    "api_keys": { "description": "API 密钥列表", "type": "list", "items": { "type": "string" }, "default": [] },
-    "default_model": { "description": "默认视频生成模型", "type": "string", "default": "sora-2-fast" },
-    "prefix": { "description": "【重要】指令是否必须带前缀", "type": "bool", "hint": "开启后，需用#或@机器人触发，避免误触。", "default": true },
-    "extra_prefix": { "description": "自定义提示词的指令前缀", "hint": "例如设置为 '生成视频'，则用 '#生成视频 <你的prompt>' 来调用", "type": "string", "default": "生成视频" },
-    "use_proxy": { "description": "是否启用网络代理", "type": "bool", "default": false },
-    "proxy_url": { "description": "网络代理地址 (http://...)", "type": "string", "default": "" },
-    "user_whitelist": { "description": "【权限】用户白名单", "type": "list", "items": { "type": "string" }, "default": [] },
-    "user_blacklist": { "description": "【权限】用户黑名单", "type": "list", "items": { "type": "string" }, "default": [] },
-    "group_whitelist": { "description": "【权限】群聊白名单", "type": "list", "items": { "type": "string" }, "default": [] },
-    "group_blacklist": { "description": "【权限】群聊黑名单", "type": "list", "items": { "type": "string" }, "default": [] },
-    "enable_user_limit": { "description": "【次数】是否启用用户次数限制", "type": "bool", "default": true },
-    "enable_group_limit": { "description": "【次数】是否启用群组次数限制", "type": "bool", "default": false },
-    "enable_checkin": { "description": "【签到】是否开启每日签到", "type": "bool", "default": true },
-    "checkin_fixed_reward": { "description": "【签到】固定签到奖励次数", "type": "int", "default": 3 },
-    "enable_random_checkin": { "description": "【签到】是否开启随机签到奖励", "type": "bool", "default": false },
-    "checkin_random_reward_max": { "description": "【签到】随机签到奖励最大值", "type": "int", "default": 5 },
-    "polling_interval": { "description": "【高级】任务状态轮询间隔（秒）", "type": "int", "default": 5 },
-    "polling_timeout": { "description": "【高级】任务超时时间（秒）", "type": "int", "default": 300 },
+    "api_mode": {
+        "description": "【核心】API 模式",
+        "type": "string",
+        "hint": "plato: 柏拉图原生API | openai: OpenAI兼容格式API",
+        "default": "plato"
+    },
+    "api_url": {
+        "description": "【柏拉图】API 的 URL",
+        "type": "string",
+        "default": "https://api.bltcy.ai"
+    },
+    "plato_api_keys": {
+        "description": "【柏拉图】API 密钥列表",
+        "type": "list",
+        "hint": "柏拉图模式专用的 API Key",
+        "items": { "type": "string" },
+        "default": []
+    },
+    "default_model": {
+        "description": "【柏拉图】视频生成模型",
+        "type": "string",
+        "default": "sora-2"
+    },
+    "openai_api_url": {
+        "description": "【OpenAI】兼容 API 的 URL",
+        "type": "string",
+        "hint": "例如: https://api.openai.com/v1/chat/completions",
+        "default": ""
+    },
+    "openai_api_keys": {
+        "description": "【OpenAI】API 密钥列表",
+        "type": "list",
+        "hint": "OpenAI 兼容模式专用的 API Key",
+        "items": { "type": "string" },
+        "default": []
+    },
+    "openai_model": {
+        "description": "【OpenAI】使用的模型名称",
+        "type": "string",
+        "default": "sora-2"
+    },
+    "prefix": {
+        "description": "【重要】指令是否必须带前缀",
+        "type": "bool",
+        "hint": "开启后，需用#或@机器人触发，避免误触。",
+        "default": true
+    },
+    "extra_prefix": {
+        "description": "自定义提示词的指令前缀",
+        "hint": "例如设置为 '生成视频'，则用 '#生成视频 <你的prompt>' 来调用",
+        "type": "string",
+        "default": "生成视频"
+    },
+    "use_proxy": {
+        "description": "是否启用网络代理",
+        "type": "bool",
+        "default": false
+    },
+    "proxy_url": {
+        "description": "网络代理地址 (http://...)",
+        "type": "string",
+        "default": ""
+    },
+    "timeout": {
+        "description": "【高级】API 请求超时时间（秒）",
+        "type": "int",
+        "default": 300
+    },
+    "user_whitelist": {
+        "description": "【权限】用户白名单",
+        "type": "list",
+        "items": { "type": "string" },
+        "default": []
+    },
+    "user_blacklist": {
+        "description": "【权限】用户黑名单",
+        "type": "list",
+        "items": { "type": "string" },
+        "default": []
+    },
+    "group_whitelist": {
+        "description": "【权限】群聊白名单",
+        "type": "list",
+        "items": { "type": "string" },
+        "default": []
+    },
+    "group_blacklist": {
+        "description": "【权限】群聊黑名单",
+        "type": "list",
+        "items": { "type": "string" },
+        "default": []
+    },
+    "enable_user_limit": {
+        "description": "【次数】是否启用用户次数限制",
+        "type": "bool",
+        "default": true
+    },
+    "enable_group_limit": {
+        "description": "【次数】是否启用群组次数限制",
+        "type": "bool",
+        "default": false
+    },
+    "enable_checkin": {
+        "description": "【签到】是否开启每日签到",
+        "type": "bool",
+        "default": true
+    },
+    "checkin_fixed_reward": {
+        "description": "【签到】固定签到奖励次数",
+        "type": "int",
+        "default": 3
+    },
+    "enable_random_checkin": {
+        "description": "【签到】是否开启随机签到奖励",
+        "type": "bool",
+        "default": false
+    },
+    "checkin_random_reward_max": {
+        "description": "【签到】随机签到奖励最大值",
+        "type": "int",
+        "default": 5
+    },
+    "polling_interval": {
+        "description": "【柏拉图】任务状态轮询间隔（秒）",
+        "type": "int",
+        "default": 5
+    },
+    "polling_timeout": {
+        "description": "【柏拉图】任务超时时间（秒）",
+        "type": "int",
+        "default": 300
+    },
     "prompt_list": {
         "description": "【核心】指令预设列表",
         "hint": "格式为 触发词:提示词。使用 #视频添加预设 来动态管理。",
         "type": "list",
         "default": []
+    },
+    "enable_llm_tool": {
+        "description": "【LLM】是否启用 LLM 工具调用",
+        "type": "bool",
+        "hint": "启用后，LLM 可以通过工具调用生成视频",
+        "default": true
+    },
+    "llm_show_progress": {
+        "description": "【LLM】是否显示生成进度提示",
+        "type": "bool",
+        "default": true
+    },
+    "enable_llm_auto_detect": {
+        "description": "【LLM】是否启用智能判断",
+        "type": "bool",
+        "hint": "启用后，插件会自动分析用户意图决定是否生成视频",
+        "default": false
+    },
+    "context_rounds": {
+        "description": "【LLM】上下文轮数",
+        "type": "int",
+        "hint": "智能判断时参考的历史消息数量",
+        "default": 20
+    },
+    "auto_detect_confidence": {
+        "description": "【LLM】智能判断置信度阈值",
+        "type": "float",
+        "hint": "0-1之间，越高越严格",
+        "default": 0.8
+    },
+    "context_max_messages": {
+        "description": "【高级】每个会话最大消息记录数",
+        "type": "int",
+        "default": 50
+    },
+    "context_max_sessions": {
+        "description": "【高级】最大会话数量",
+        "type": "int",
+        "default": 100
     }
 }
