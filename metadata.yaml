@@ -1,5 +1,5 @@
 name: astrbot_plugin_bolatuship
 description: Sora 视频生成插件，支持柏拉图API和OpenAI兼容格式，支持LLM智能判断
 author: shskjw
-version: 2.0.0
-repo: https://github.com/shkjw/astrbot_plugin_bolatuship
+version: 2.0.1
+repo: https://github.com/shskjw/astrbot_plugin_bolatuship
