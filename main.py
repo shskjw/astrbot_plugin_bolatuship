@@ -31,11 +31,14 @@ from .data_manager import DataManager, norm_id
 from .context_manager import ContextManager, LLMTaskAnalyzer
 
 
+PLUGIN_VERSION = "2.0.2"
+
+
 @register(
     "astrbot_plugin_bolatuship",
     "shskjw",
     "Sora 视频生成插件，支持柏拉图API和OpenAI兼容格式，支持LLM智能判断",
-    "2.0.0",
+    PLUGIN_VERSION,
     "https://github.com/shkjw/astrbot_plugin_bolatuship",
 )
 class VideoGenPlugin(Star):
@@ -83,11 +86,16 @@ class VideoGenPlugin(Star):
                 logger.info(f"[VideoGen] 使用代理: {self._proxy}")
         
         # 检查 API 配置
-        if not self.conf.get("api_keys"):
-            logger.warning("[VideoGen] 未配置任何 API 密钥，插件无法工作")
-        
         api_mode = self.conf.get("api_mode", "plato")
-        logger.info(f"[VideoGen] 插件已加载 v2.0.0 | API模式: {api_mode} | LLM智能判断: {'已启用' if self._llm_auto_detect else '未启用'}")
+        if api_mode == "openai":
+            has_api_keys = bool(self.conf.get("openai_api_keys", []))
+        else:
+            has_api_keys = bool(self.conf.get("plato_api_keys", []))
+
+        if not has_api_keys:
+            logger.warning(f"[VideoGen] 当前 API 模式 {api_mode} 未配置可用的 API 密钥，插件无法工作")
+
+        logger.info(f"[VideoGen] 插件已加载 v{PLUGIN_VERSION} | API模式: {api_mode} | LLM智能判断: {'已启用' if self._llm_auto_detect else '未启用'}")
 
     async def _get_session(self) -> aiohttp.ClientSession:
         """获取 HTTP Session"""
@@ -275,6 +283,29 @@ class VideoGenPlugin(Star):
             if await aiofiles.os.path.exists(filepath):
                 await aiofiles.os.remove(filepath)
 
+    async def _start_llm_video_task(
+        self,
+        event: AstrMessageEvent,
+        prompt: str,
+        image_bytes: Optional[bytes] = None
+    ) -> str:
+        """统一启动 LLM 视频任务，避免重复逻辑"""
+        sender_id = norm_id(event.get_sender_id())
+        group_id = norm_id(event.get_group_id()) if event.get_group_id() else None
+
+        deduction = await self.data_mgr.check_quota(
+            sender_id, group_id, self.is_admin(event), cost=1
+        )
+        if not deduction["allowed"]:
+            return deduction["msg"]
+
+        asyncio.create_task(
+            self._run_llm_video_task(event, prompt, image_bytes, deduction, sender_id, group_id)
+        )
+
+        mode_name = "图生视频" if image_bytes else "文生视频"
+        return f"[TOOL_SUCCESS] {mode_name}任务已启动，结果将由插件后台直接发送给用户。【重要】不要再额外回复任何说明文字，保持沉默。"
+
     # ================= LLM 工具 =================
 
     @filter.llm_tool(name="video_generate_text")
@@ -289,24 +320,7 @@ class VideoGenPlugin(Star):
         if not self.conf.get("enable_llm_tool", True):
             return "❌ LLM 工具已禁用，请使用指令模式调用此功能。"
 
-        sender_id = norm_id(event.get_sender_id())
-        group_id = norm_id(event.get_group_id()) if event.get_group_id() else None
-
-        # 检查权限
-        deduction = await self.data_mgr.check_quota(
-            sender_id, group_id, self.is_admin(event), cost=1
-        )
-        if not deduction["allowed"]:
-            return deduction["msg"]
-
-        # 发送进度提示
-        if self.conf.get("llm_show_progress", True):
-            await event.send(event.chain_result([Comp.Plain(f"🎬 收到文生视频请求，正在生成...")]))
-
-        # 启动后台任务
-        asyncio.create_task(self._run_llm_video_task(event, prompt, None, deduction, sender_id, group_id))
-
-        return "[TOOL_SUCCESS] 文生视频任务已启动。视频将在后台生成并自动发送给用户。【重要】你不需要再回复任何内容，保持沉默即可。"
+        return await self._start_llm_video_task(event, prompt, None)
 
     @filter.llm_tool(name="video_generate_image")
     async def image_to_video_tool(self, event: AstrMessageEvent, prompt: str = ""):
@@ -322,29 +336,11 @@ class VideoGenPlugin(Star):
         if not self.conf.get("enable_llm_tool", True):
             return "❌ LLM 工具已禁用，请使用指令模式调用此功能。"
 
-        sender_id = norm_id(event.get_sender_id())
-        group_id = norm_id(event.get_group_id()) if event.get_group_id() else None
-
-        # 提取图片
         image_bytes = await self.get_image_from_event(event)
         if not image_bytes:
             return "❌ 未检测到图片，请发送或引用图片后再试。"
 
-        # 检查权限
-        deduction = await self.data_mgr.check_quota(
-            sender_id, group_id, self.is_admin(event), cost=1
-        )
-        if not deduction["allowed"]:
-            return deduction["msg"]
-
-        # 发送进度提示
-        if self.conf.get("llm_show_progress", True):
-            await event.send(event.chain_result([Comp.Plain(f"🎬 收到图生视频请求，正在生成...")]))
-
-        # 启动后台任务
-        asyncio.create_task(self._run_llm_video_task(event, prompt or "让图片动起来", image_bytes, deduction, sender_id, group_id))
-
-        return "[TOOL_SUCCESS] 图生视频任务已启动。视频将在后台生成并自动发送给用户。【重要】你不需要再回复任何内容，保持沉默即可。"
+        return await self._start_llm_video_task(event, prompt or "让图片动起来", image_bytes)
 
     async def _run_llm_video_task(
         self,
@@ -469,7 +465,7 @@ class VideoGenPlugin(Star):
         presets = list(self.data_mgr.prompt_map.keys())
         
         help_text = (
-            f"🎬 Sora 视频生成插件帮助 (v2.0.0)\n\n"
+            f"🎬 Sora 视频生成插件帮助 (v{PLUGIN_VERSION})\n\n"
             f"【使用方法】\n"
             f"1. 发送图片或引用图片，然后输入指令 (图生视频)\n"
             f"2. 不带图片直接使用指令 (文生视频)\n"

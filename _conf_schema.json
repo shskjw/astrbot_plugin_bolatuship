@@ -2,12 +2,14 @@
     "api_mode": {
         "description": "【核心】API 模式",
         "type": "string",
-        "hint": "plato: 柏拉图原生API | openai: OpenAI兼容格式API",
+        "hint": "用户可直接选择：plato=柏拉图原生API | openai=OpenAI兼容格式API",
+        "enum": ["plato", "openai"],
         "default": "plato"
     },
     "api_url": {
         "description": "【柏拉图】API 的 URL",
         "type": "string",
+        "hint": "支持填写域名、/v1、/v2 或完整 /videos/generations 路径，插件会自动补全",
         "default": "https://api.bltcy.ai"
     },
     "plato_api_keys": {
@@ -25,7 +27,7 @@
     "openai_api_url": {
         "description": "【OpenAI】兼容 API 的 URL",
         "type": "string",
-        "hint": "例如: https://api.openai.com/v1/chat/completions",
+        "hint": "支持填写域名、/v1、/chat/completions 或 /videos/generations，插件会自动识别视频接口格式",
         "default": ""
     },
     "openai_api_keys": {
@@ -36,7 +38,7 @@
         "default": []
     },
     "openai_model": {
-        "description": "【OpenAI】使用的模型名称",
+        "description": "【OpenAI】使用的视频模型名称",
         "type": "string",
         "default": "sora-2"
     },
@@ -47,7 +49,7 @@
         "default": true
     },
     "extra_prefix": {
-        "description": "自定义提示词的指令前缀",
+        "description": "自定义视频提示词指令前缀",
         "hint": "例如设置为 '生成视频'，则用 '#生成视频 <你的prompt>' 来调用",
         "type": "string",
         "default": "生成视频"
@@ -132,7 +134,7 @@
         "default": 300
     },
     "prompt_list": {
-        "description": "【核心】指令预设列表",
+        "description": "【核心】视频指令预设列表",
         "hint": "格式为 触发词:提示词。使用 #视频添加预设 来动态管理。",
         "type": "list",
         "default": []

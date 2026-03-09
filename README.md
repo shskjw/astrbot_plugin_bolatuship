@@ -6,9 +6,17 @@ Sora 视频生成插件，支持柏拉图 API 和 OpenAI 兼容格式，支持 L
 
 - **文生视频**: 根据文字描述生成视频
 - **图生视频**: 将图片转换为视频
-- **多 API 支持**: 
+- **多 API 支持**:
   - 柏拉图原生 API
   - OpenAI 兼容格式 API
+- **用户可选模式**:
+  - `plato`：柏拉图原生接口
+  - `openai`：OpenAI 兼容接口
+- **视频接口格式兼容**:
+  - OpenAI `chat/completions`
+  - OpenAI `videos/generations`
+  - 柏拉图 `/v1/videos/generations`
+  - 柏拉图 `/v2/videos/generations`
 - **LLM 智能判断**: 自动识别用户意图，通过 LLM 工具调用生成视频
 - **次数管理**: 用户/群组次数限制、签到奖励
 - **预设系统**: 支持自定义预设提示词
@@ -18,7 +26,6 @@ Sora 视频生成插件，支持柏拉图 API 和 OpenAI 兼容格式，支持 L
 在 AstrBot 插件市场搜索 `bolatuship` 或手动安装：
 
 ```bash
-# 克隆到插件目录
 git clone https://github.com/shkjw/astrbot_plugin_bolatuship.git
 ```
 
@@ -26,29 +33,42 @@ git clone https://github.com/shkjw/astrbot_plugin_bolatuship.git
 
 ### API 模式
 
-插件支持两种 API 模式：
+插件支持两种 API 模式，配置中可直接选择：
 
 #### 1. 柏拉图 API（默认）
 
 ```json
 {
-    "api_mode": "plato",
-    "api_url": "https://api.bltcy.ai",
-    "api_keys": ["your-api-key"],
-    "default_model": "sora-2-fast"
+  "api_mode": "plato",
+  "api_url": "https://api.bltcy.ai",
+  "plato_api_keys": ["your-api-key"],
+  "default_model": "sora-2"
 }
 ```
+
+`api_url` 支持以下几种写法，插件会自动补全或识别：
+
+- `https://api.bltcy.ai`
+- `https://api.bltcy.ai/v1`
+- `https://api.bltcy.ai/v2`
+- `https://api.bltcy.ai/v2/videos/generations`
 
 #### 2. OpenAI 兼容格式
 
 ```json
 {
-    "api_mode": "openai",
-    "openai_api_url": "https://your-api.com/v1/chat/completions",
-    "api_keys": ["your-api-key"],
-    "openai_model": "sora-2"
+  "api_mode": "openai",
+  "openai_api_url": "https://your-api.com/v1/chat/completions",
+  "openai_api_keys": ["your-api-key"],
+  "openai_model": "sora-2"
 }
 ```
+
+`openai_api_url` 支持以下常见视频接口格式：
+
+- `https://your-api.com/v1/chat/completions`
+- `https://your-api.com/v1/videos/generations`
+- 仅填基础域名或 `/v1` 路径时，插件会按视频接口规则自动识别/补全
 
 ### LLM 工具配置
 
@@ -56,8 +76,8 @@ git clone https://github.com/shkjw/astrbot_plugin_bolatuship.git
 
 ```json
 {
-    "enable_llm_tool": true,
-    "llm_show_progress": true
+  "enable_llm_tool": true,
+  "llm_show_progress": true
 }
 ```
 
@@ -65,7 +85,7 @@ git clone https://github.com/shkjw/astrbot_plugin_bolatuship.git
 
 ### 指令模式
 
-```
+```text
 # 文生视频
 #生成视频 一只猫在草地上奔跑
 
@@ -82,13 +102,14 @@ git clone https://github.com/shkjw/astrbot_plugin_bolatuship.git
 ### LLM 模式
 
 直接与 AI 对话：
+
 - "帮我生成一个视频，内容是日落时分的海边"
 - "把这张图片变成视频"
 - "生成一段猫咪玩耍的视频"
 
 ### 管理指令
 
-```
+```text
 #视频签到          - 每日签到获取次数
 #视频查询次数      - 查看剩余次数
 #视频帮助          - 显示帮助信息
@@ -118,10 +139,10 @@ git clone https://github.com/shkjw/astrbot_plugin_bolatuship.git
 
 ## 项目结构
 
-```
+```text
 astrbot_plugin_bolatuship/
 ├── main.py              # 主插件文件
-├── api_manager.py       # API 管理器（支持多种 API 格式）
+├── api_manager.py       # API 管理器（支持多种视频 API 格式）
 ├── data_manager.py      # 数据管理器（次数、签到、预设）
 ├── context_manager.py   # 上下文管理器（LLM 智能判断）
 ├── _conf_schema.json    # 配置文件模板
@@ -130,6 +151,17 @@ astrbot_plugin_bolatuship/
 ```
 
 ## 更新日志
+
+### v2.0.2
+- 新增 `_start_llm_video_task` 统一 LLM 视频任务启动逻辑
+- 消除文生视频 / 图生视频工具中的重复代码
+- 继续优化 LLM 工具调用时的静默返回，减少重复话语
+
+### v2.0.1
+- 修复配置界面中 API 模式不可直接选择的问题
+- 修复不同 API 模式下密钥检查不准确的问题
+- 明确仅保留视频生成功能
+- 补充视频接口格式说明
 
 ### v2.0.0
 - 重构项目架构，采用分层设计
